@@ -1,0 +1,18 @@
+{
+  "canvas_url": "https://canvas.cityu.edu.hk",
+  "access_token": "",
+  "lookback_days": 7,
+  "upcoming_days": 7,
+  "tz_offset_hours": 8,
+  "term_filter": "",
+  "github": {
+    "username": "",
+    "repo_name": "learning-hub",
+    "repo_dir": "",
+    "push_enabled": false
+  },
+  "token_expires_at": "",
+  "token_remind_days": 5,
+  "download_files": true,
+  "download_dir": "downloads"
+}

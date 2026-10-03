@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的学习中心 · Canvas Weekly Hub v2.2</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --panel: #fff; --panel-2: #fafbfe; --ink: #111827; --muted: #6b7280;
+    --line: #e7eaf1; --brand: #1e5aa8; --brand-2: #3b82f6; --accent: #0d9488;
+    --urgent: #e11d48; --urgent-bg: #fff1f2; --soon: #c2740a; --soon-bg: #fff8ec;
+    --far: #0f766e; --far-bg: #f0fdfa; --chip: #eef2ff;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 10px 26px -14px rgba(16,24,40,.22);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --panel: #161b22; --panel-2: #1b2130; --ink: #e6edf3; --muted: #8b949e;
+    --line: #27303d; --brand: #58a6ff; --brand-2: #79c0ff; --accent: #2dd4bf;
+    --urgent: #ff7b72; --urgent-bg: #2b1518; --soon: #e3b341; --soon-bg: #2a2312;
+    --far: #3fb950; --far-bg: #0f2419; --chip: #1e2735;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 30px -16px rgba(0,0,0,.8);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); line-height: 1.6;
+         font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+         -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---------- 顶栏 ---------- */
+  header { position: sticky; top: 0; z-index: 20; color: #fff;
+           background: linear-gradient(120deg, #17427d 0%, #1e5aa8 55%, #2e86de 100%);
+           box-shadow: 0 6px 20px -12px rgba(16,24,40,.6); }
+  .bar { max-width: 1060px; margin: 0 auto; padding: 14px 18px;
+         display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .brand { font-size: 1.12rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .brand small { font-weight: 400; opacity: .8; font-size: .78rem;
+                 border-left: 1px solid rgba(255,255,255,.35); padding-left: 9px; }
+  .bar .spacer { flex: 1 1 auto; }
+  .search { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.16);
+            border: 1px solid rgba(255,255,255,.25); border-radius: 999px;
+            padding: 5px 12px; flex: 1 1 160px; min-width: 0; max-width: 280px; }
+  .search input { background: none; border: 0; outline: 0; color: #fff; width: 100%; font-size: .88rem; }
+  .search input::placeholder { color: rgba(255,255,255,.7); }
+  .icon-btn { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25);
+              color: #fff; border-radius: 999px; width: 34px; height: 34px; line-height: 1; }
+  .icon-btn:hover { background: rgba(255,255,255,.28); }
+  .icon-btn.refresh-action { width: auto; padding: 0 12px; flex-shrink: 0; font-size: .85rem; }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .meta { max-width: 1060px; margin: 0 auto; padding: 0 18px 12px; font-size: .8rem;
+          color: rgba(255,255,255,.85); display: flex; gap: 10px; flex-wrap: wrap; }
+  .meta i { font-style: normal; opacity: .55; }
+  .meta a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ---------- 布局 ---------- */
+  main { max-width: 1060px; margin: 22px auto 70px; padding: 0 18px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+           box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 18px; }
+  .panel > h2 { font-size: 1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .panel > h2 .cnt { font-size: .78rem; font-weight: 600; color: var(--muted);
+                     background: var(--panel-2); border: 1px solid var(--line);
+                     border-radius: 999px; padding: 1px 9px; }
+  .hint { font-size: .82rem; color: var(--muted); margin-bottom: 12px; }
+  /* minmax(0,…) 很关键：默认的 auto 最小值会让面板被内容撑破视口 */
+  .cols { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .cols > .panel { min-width: 0; }
+  @media (min-width: 780px) { .cols { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); } }
+
+  /* ---------- 周切换 ---------- */
+  .weeks { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 4px;
+           scrollbar-width: thin; }
+  .wchip { flex: 0 0 auto; background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+           border-radius: 999px; padding: 6px 14px; font-size: .84rem; box-shadow: var(--shadow); }
+  .wchip:hover { color: var(--ink); }
+  .wchip[aria-current="true"] { background: var(--brand); border-color: var(--brand);
+                                color: #fff; font-weight: 600; }
+
+  /* ---------- 统计 ---------- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(122px, 100%), 1fr));
+           gap: 12px; margin-bottom: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+          padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 1.6rem; line-height: 1.25; }
+  .stat span { font-size: .8rem; color: var(--muted); }
+  .stat.hot b { color: var(--urgent); }
+
+  /* ---------- 条目行 ---------- */
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 0;
+         border-bottom: 1px dashed var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .ico { flex: 0 0 auto; width: 26px; text-align: center; font-size: 1rem; }
+  .row .grow { flex: 1 1 auto; min-width: 0; }
+  .row .grow a { font-weight: 600; display: inline-block; max-width: 100%; min-width: 0;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+  .row .sub { font-size: .78rem; color: var(--muted); display: block; }
+  .row .tail { flex: 0 0 auto; text-align: right; font-size: .78rem; color: var(--muted); }
+  .pill { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: .72rem;
+          font-weight: 600; background: var(--chip); color: var(--brand); white-space: nowrap; }
+  .pill.new { background: var(--far-bg); color: var(--far); }
+  .pill.upd { background: var(--soon-bg); color: var(--soon); }
+  .pill.sub-ok { background: var(--far-bg); color: var(--far); }
+  .pill.sub-no { background: var(--urgent-bg); color: var(--urgent); font-weight: 700; }
+
+  /* ---- 网页版设置浮层（build_web.py 注入） ---- */
+  #setup-overlay { position: fixed; inset: 0; background: rgba(8,12,20,.8);
+    z-index: 50; display: flex; align-items: flex-start; justify-content: center;
+    padding: 40px 14px; overflow: auto; }
+  #setup-overlay .modal { background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 16px; width: 100%; min-width: 0; max-width: 760px; padding: 20px 22px;
+    overflow-wrap: anywhere;
+    box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  #setup-overlay h3 { font-size: 1.1rem; margin-bottom: 4px; min-width: 0; }
+  #setup-overlay .setup-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  #setup-overlay .setup-head .btn { flex-shrink: 0; }
+  #setup-overlay [hidden] { display: none !important; }
+  #setup-overlay .version-badge { color: var(--muted); font-size: .75rem; font-weight: 400; }
+  #setup-overlay .setup-steps { padding-left: 20px; margin: 8px 0; }
+  #setup-overlay .setup-steps li { margin: 6px 0; font-size: .88rem; }
+  #setup-overlay .frow { display: flex; gap: 8px; align-items: center; margin: 9px 0; flex-wrap: wrap; }
+  #setup-overlay .frow label { width: 128px; font-size: .9rem; color: var(--muted); }
+  #setup-overlay input { flex: 1; min-width: 200px; padding: 7px 10px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel-2); color: var(--ink); font: inherit; }
+  #setup-overlay input[type="checkbox"] { min-width: 0; width: auto; margin-right: 6px; }
+  #refresh-status { margin-bottom: 14px; font-size: .85rem; overflow-wrap: anywhere; }
+  #refresh-plan { color: var(--muted); }
+  #refresh-message { color: var(--brand); }
+  #refresh-reminder { margin-top: 8px; padding: 12px 14px; border: 1px solid var(--line);
+    border-left: 4px solid var(--accent); background: var(--panel); border-radius: 12px; }
+  #refresh-reminder[hidden] { display: none; }
+  #refresh-reminder .reminder-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  #refresh-reminder button { padding: 7px 14px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--panel-2); color: var(--ink); }
+  #refresh-reminder #reminder-refresh { background: var(--brand); color: #fff; }
+  #refresh-reminder button:disabled { opacity: .65; cursor: wait; }
+  #setup-overlay .hint { font-size: .8rem; color: var(--muted); margin: 4px 0 0; }
+  #setup-overlay .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  #setup-overlay .btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--ink); cursor: pointer; font: inherit; }
+  #setup-overlay .btn.primary { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
+  #setup-overlay .btn:hover { filter: brightness(1.08); }
+  #setup-overlay .btn:disabled { opacity: .65; cursor: wait; }
+  #setup-overlay .btn { max-width: 100%; white-space: normal; }
+  #setup-overlay .agent-code { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; }
+  #setup-overlay textarea { display: block; box-sizing: border-box; width: 100%; min-width: 0;
+    margin-top: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel-2); color: var(--ink); font: inherit; font-size: .8rem; }
+  #setup-overlay .status { font-size: .85rem; margin-top: 8px; white-space: pre-wrap; min-height: 1.2em; }
+  #setup-overlay a { color: var(--brand-2); }
+  .subbox { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; margin-top: 8px; }
+  .subbox code { font-size: .78rem; word-break: break-all; color: var(--brand-2); }
+  .fstep { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+  .fstep-h { font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
+  details.faq { margin-top: 6px; border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 10px; background: var(--panel-2); font-size: .85rem; }
+  details.faq summary { cursor: pointer; color: var(--brand-2); font-weight: 600; }
+  details.faq p { margin: 6px 0; }
+  #first-tip { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;
+    background: var(--panel-2); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+    border-radius: 12px; padding: 10px 14px; margin: 0 0 14px; font-size: .85rem; color: var(--ink); }
+  #first-tip button { background: none; border: 0; cursor: pointer; color: var(--muted);
+    font-size: 1rem; padding: 0 2px; }
+  #first-tip > span { flex: 1; min-width: 0; }
+  #first-tip button:hover { color: var(--ink); }
+  @media (max-width: 640px) {
+    #setup-overlay { padding: 12px 8px; }
+    #setup-overlay .modal { padding: 14px 12px; }
+    #setup-overlay .frow { flex-direction: column; align-items: stretch; gap: 4px; }
+    #setup-overlay .frow label { width: auto; }
+    #setup-overlay input { min-width: 0; width: 100%; }
+    #setup-overlay .frow .btn, #setup-overlay .frow a.btn { width: 100%; text-align: center; }
+    #first-tip { font-size: .8rem; }
+  }
+
+  .pill.pts { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+  .due { display: inline-block; border-radius: 8px; padding: 2px 9px; font-size: .75rem;
+         font-weight: 600; white-space: nowrap; }
+  .due span { font-weight: 700; margin-left: 5px; }
+  .due.over { background: var(--panel-2); color: var(--muted); }
+  .due.urgent { background: var(--urgent-bg); color: var(--urgent); }
+  .due.soon { background: var(--soon-bg); color: var(--soon); }
+  .due.far { background: var(--far-bg); color: var(--far); }
+
+  /* 窄屏：把分值/状态/截止时间折到第二行，与文字左对齐 */
+  @media (max-width: 560px) {
+    .row { flex-wrap: wrap; }
+    .row .tail { flex: 1 1 100%; text-align: left; margin-left: 36px; }
+    .meta i { display: none; }          /* 折行后行尾的 · 会变成孤零零的尾巴 */
+  }
+
+  /* ---------- 课程卡片 ---------- */
+  .course { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+            border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden; }
+  .course > summary { list-style: none; cursor: pointer; padding: 14px 18px;
+                      display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .course > summary::-webkit-details-marker { display: none; }
+  .course > summary:hover { background: var(--panel-2); }
+  .course .cname { font-weight: 700; font-size: .98rem; }
+  .course .ccode { font-size: .75rem; color: var(--muted); }
+  .course .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; align-items: center; }
+  .course .caret { color: var(--muted); font-size: .8rem; transition: transform .15s; }
+  .course[open] .caret { transform: rotate(90deg); }
+  .course .body { padding: 2px 18px 16px; border-top: 1px solid var(--line); }
+  .course h4 { font-size: .85rem; color: var(--brand); margin: 14px 0 2px;
+               display: flex; align-items: center; gap: 6px; }
+  .course h4 em { font-style: normal; color: var(--muted); font-weight: 400; font-size: .78rem; }
+  .course-link { font-size: .75rem; margin-top: 12px; display: inline-block; }
+
+  /* ---------- 资料网格 ---------- */
+  .files { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(215px, 100%), 1fr));
+           gap: 8px; margin-top: 6px; }
+  .file { display: flex; gap: 9px; align-items: flex-start; background: var(--panel-2);
+          border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+  .file .fico { font-size: 1.1rem; line-height: 1.3; }
+  .file .fname { font-size: .84rem; font-weight: 600; overflow-wrap: anywhere;
+                 display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+                 -webkit-box-orient: vertical; overflow: hidden; }
+  .file .fmeta { font-size: .74rem; color: var(--muted); }
+  .ann li { margin: 6px 0 0 18px; font-size: .87rem; }
+  .ann .atext { color: var(--muted); font-size: .82rem; }
+
+  /* ---------- 静默课程 & 空态 ---------- */
+  .quiet-wrap { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+  .qchip { background: var(--panel-2); border: 1px dashed var(--line); color: var(--muted);
+           border-radius: 999px; padding: 4px 12px; font-size: .79rem; }
+  .empty { color: var(--muted); font-size: .87rem; padding: 8px 0; }
+  .good { background: var(--far-bg); color: var(--far); border-radius: 10px;
+          padding: 12px 14px; font-size: .88rem; }
+  .hit-week { font-size: .74rem; color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 0 18px 46px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">📚 我的学习中心 <small>Canvas 课程周报 · v2.2</small></div>
+    <div class="spacer"></div>
+    <label class="search">🔍
+      <input id="q" type="search" placeholder="搜索作业 / 资料 / 公告" autocomplete="off">
+    </label>
+    <a id="canvas-link" class="icon-btn" href="https://canvas.cityu.edu.hk/" title="登录 / 打开 Canvas" target="_blank" rel="noopener noreferrer"
+       style="display:grid;place-items:center;text-decoration:none">🎓</a>
+    <button id="engine-refresh-btn" class="icon-btn refresh-action" title="按本地配置抓取最新数据" style="display:none">刷新课程</button>
+    <button id="settings-btn" class="icon-btn" title="设置：令牌 / 抓取 / 导出">⚙️</button>
+    <button id="theme" class="icon-btn" title="切换深色 / 浅色">🌙</button>
+  </div>
+  <div class="meta">
+    <span id="updated">加载中…</span><i>·</i>
+    <span id="range"></span><i>·</i>
+    <span id="tz-label">UTC+8</span><i>·</i>
+    <a id="ics-link" href="deadlines.ics" download title="导入手机日历，截止前 2 小时提醒">📅 截止日历</a>
+    <a href="https://github.com/Famalhaut04/canvas-weekly-hub" target="_blank" rel="noopener noreferrer" title="在 GitHub 支持项目">☆ Star<span id="star-count"></span></a>
+  </div>
+</header>
+
+<main>
+  <section id="refresh-status" aria-label="课程更新">
+    <div id="refresh-time">更新时间未知，可手动刷新</div>
+    <div id="refresh-plan">每 3 天提醒 · 点击才刷新</div>
+    <div id="refresh-message" role="status" aria-live="polite"></div>
+    <div id="refresh-reminder" hidden>
+      <p id="reminder-text" role="status" aria-live="polite"></p>
+      <div class="reminder-actions">
+        <button id="reminder-refresh">刷新课程</button>
+        <button id="reminder-later">暂不刷新</button>
+      </div>
+    </div>
+  </section>
+  <nav class="weeks" id="week-nav"></nav>
+  <section class="stats" id="stats"></section>
+  <section class="cols">
+    <div class="panel" id="todo-panel">
+      <h2>⏰ 待办提醒 <span class="cnt" id="todo-cnt"></span></h2>
+      <p class="hint">按截止时间从近到远排列，跨所有课程汇总。</p>
+      <div id="todo"></div>
+    </div>
+    <div class="panel" id="fresh-panel">
+      <h2>🆕 本周新布置 <span class="cnt" id="fresh-cnt"></span></h2>
+      <p class="hint">过去 7 天内老师新布置或有改动的任务。</p>
+      <div id="fresh"></div>
+    </div>
+  </section>
+  <h2 style="font-size:1rem;margin:26px 0 12px">📚 分课程动态</h2>
+  <div id="courses"></div>
+  <section class="panel" id="quiet-panel">
+    <h2>💤 本周无动态的课程 <span class="cnt" id="quiet-cnt"></span></h2>
+    <div class="quiet-wrap" id="quiet"></div>
+  </section>
+</main>
+
+<footer>
+  Canvas Weekly Hub v2.2 · 手动刷新 · 配置与历史由自己保管
+</footer>
+
+<script>
+/* ================= 工具 ================= */
+const esc = s => String(s === null || s === undefined ? "" : s)
+  .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = id => document.getElementById(id);
+// 备份内容不能把 javascript: / data: 注入链接；本地课件相对路径仍可使用。
+function safeHref(value) {
+  const s = String(value || "").trim();
+  if (/^https:\/\//i.test(s)) {
+    try { const u = new URL(s); return u.username || u.password ? "#" : esc(u.href); }
+    catch (e) { return "#"; }
+  }
+  return s && !/[\\\x00-\x20]/.test(s) && !/^\/\//.test(s) && !/^[^/]*:/.test(s) ? esc(s) : "#";
+}
+const HK = "Asia/Hong_Kong";
+const fmtHK = d => new Intl.DateTimeFormat("zh-CN", {
+  timeZone: HK, month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false
+}).format(d);
+
+const FILE_ICON = { PPT: "📊", PDF: "📕", Word: "📄", Excel: "📗", "压缩包": "🗜️",
+                    "代码": "💻", "视频": "🎬", "其他": "📎" };
+const KIND_ICON = { "测验": "🧪", "讨论": "💬", "提交作业": "📤", "外部工具": "🔗",
+                    "不计分": "◻️", "任务": "📌" };
+
+/* 解析截止时间 → {days, label, cls, when} */
+function due(iso, text) {
+  let d = null;
+  if (iso) d = new Date(iso);
+  else if (text && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(text))
+    d = new Date(text.replace(" ", "T") + ":00+08:00");
+  if (!d || isNaN(d.getTime())) return { cls: "over", when: text || "无截止时间", label: "" };
+  const days = Math.ceil((d - Date.now()) / 86400000);
+  const when = fmtHK(d);
+  if (days < 0) return { days, cls: "over", when, label: "已截止" };
+  if (days === 0) return { days, cls: "urgent", when, label: "今天" };
+  if (days === 1) return { days, cls: "urgent", when, label: "明天" };
+  if (days <= 3) return { days, cls: "urgent", when, label: days + " 天后" };
+  if (days <= 7) return { days, cls: "soon", when, label: days + " 天后" };
+  return { days, cls: "far", when, label: days + " 天后" };
+}
+const size = b => !b ? "" : b < 1024 ? b + " B"
+  : b < 1048576 ? (b / 1024).toFixed(0) + " KB" : (b / 1048576).toFixed(1) + " MB";
+const fileWhen = f => f.is_update ? (f.updated_at || f.created_at) : f.created_at;
+const active = c => !!(c.new_assignments.length || c.upcoming.length || c.new_files.length || c.announcements.length);
+const score = c => c.new_assignments.length * 3 + c.upcoming.length * 3 + c.new_files.length + c.announcements.length;
+
+/* ================= 渲染片段 ================= */
+const subChip = a => a.graded
+  ? `<span class="pill sub-ok">已评分 ${esc(a.score ?? "-")}</span>`
+  : a.submitted === true ? `<span class="pill sub-ok">已提交</span>`
+  : a.submitted === false ? `<span class="pill sub-no">未提交</span>` : "";
+
+function assignRow(a, showStatus) {
+  const d = due(a.due_iso, a.due_at);
+  const pts = a.points === null || a.points === undefined ? "" : `<span class="pill pts">${esc(a.points)} 分</span>`;
+  const st = showStatus && a.status
+    ? `<span class="pill ${a.status === "新布置" ? "new" : "upd"}">${esc(a.status)}</span>` : "";
+  const icon = KIND_ICON[a.kind] || "📌";
+  return `<div class="row">
+    <span class="ico" title="${esc(a.kind || "任务")}">${icon}</span>
+    <span class="grow">
+      <a href="${safeHref(a.url)}" target="_blank" rel="noopener">${esc(a.name)}</a>
+      <span class="sub">${esc(a.kind || "任务")}</span>
+    </span>
+    ${pts}${subChip(a)}${st}
+    <span class="tail"><span class="due ${d.cls}">${esc(d.when)}${d.label ? `<span>${d.label}</span>` : ""}</span></span>
+  </div>`;
+}
+
+function fileCard(f, course) {
+  const href = f.url || (course && course.url) || "#";
+  return `<a class="file" href="${safeHref(href)}" target="_blank" rel="noopener" title="${esc(f.name)}">
+    <span class="fico">${FILE_ICON[f.kind] || "📎"}</span>
+    <span style="min-width:0">
+      <span class="fname">${esc(f.name)}</span>
+      <span class="fmeta">${esc(f.kind)}${size(f.size_bytes || (f.size_kb ? f.size_kb * 1024 : 0)) ? " · " + size(f.size_bytes || (f.size_kb * 1024)) : ""} ·
+        ${esc(fileWhen(f))}${f.is_update ? " · 有更新" : ""}</span>
+    </span>
+  </a>`;
+}
+
+function courseCard(c, open) {
+  const block = [];
+  if (c.changes && c.changes.length)
+    block.push(`<h4>🔄 与上次相比的变化 <em>${c.changes.length}</em></h4>
+      <ul class="ann">${c.changes.map(ch => `<li><strong>${esc(ch.type)}</strong>：${esc(ch.name)}
+        <span class="atext">（${esc(ch.detail)}）</span></li>`).join("")}</ul>`);
+  if (c.new_assignments.length)
+    block.push(`<h4>📝 新作业 / 任务 <em>${c.new_assignments.length}</em></h4>
+      ${c.new_assignments.map(a => assignRow(a, true)).join("")}`);
+  if (c.upcoming.length)
+    block.push(`<h4>⏰ 未来 7 天截止 <em>${c.upcoming.length}</em></h4>
+      ${c.upcoming.map(a => assignRow(a, false)).join("")}`);
+  if (c.new_files.length)
+    block.push(`<h4>📂 新资料 <em>${c.new_files.length}</em></h4>
+      <div class="files">${c.new_files.map(f => fileCard(f, c)).join("")}</div>`);
+  if (c.announcements.length)
+    block.push(`<h4>📢 公告 <em>${c.announcements.length}</em></h4>
+      <ul class="ann">${c.announcements.map(a => `<li>
+        ${a.url ? `<a href="${safeHref(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a>`
+                : `<strong>${esc(a.title)}</strong>`}
+        <span class="atext">（${esc(a.created_at)}）${esc(a.summary)}…</span></li>`).join("")}</ul>`);
+
+  const badges = [];
+  if (c.changes && c.changes.length) badges.push(`<span class="pill upd">${c.changes.length} 变化</span>`);
+  if (c.new_assignments.length) badges.push(`<span class="pill new">${c.new_assignments.length} 新任务</span>`);
+  if (c.upcoming.length) badges.push(`<span class="pill upd">${c.upcoming.length} 待办</span>`);
+  if (c.new_files.length) badges.push(`<span class="pill">${c.new_files.length} 新资料</span>`);
+
+  return `<details class="course" ${open ? "open" : ""}>
+    <summary>
+      <span>
+        <div class="cname">${esc(c.name)}</div>
+        <div class="ccode">${esc(c.code || "")}${c.term ? " · " + esc(c.term) : ""}</div>
+      </span>
+      <span class="badges">${badges.join("")}<span class="caret">▶</span></span>
+    </summary>
+    <div class="body">${block.join("")}
+      ${c.url ? `<a class="course-link" href="${safeHref(c.url)}" target="_blank" rel="noopener">在 Canvas 中打开该课程 ↗</a>` : ""}
+    </div>
+  </details>`;
+}
+
+/* ================= 主渲染 ================= */
+let DATA = { weeks: [] }, SEL = 0, Q = "";
+
+function weeksSorted() {
+  return (DATA.weeks || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+function renderWeekNav() {
+  const ws = weeksSorted();
+  $("week-nav").innerHTML = ws.map((w, i) =>
+    `<button class="wchip" data-i="${i}" aria-current="${i === SEL}">
+       ${i === 0 ? "最新 · " : ""}${esc(w.date)}
+     </button>`).join("");
+  $("week-nav").querySelectorAll(".wchip").forEach(b =>
+    b.onclick = () => { SEL = +b.dataset.i; render(); });
+}
+
+function allTodo(w) {
+  const map = new Map();
+  (w.courses || []).forEach(c => {
+    const add = (a, tag) => {
+      const key = (a.url || "") + "|" + a.name;
+      if (map.has(key)) return;
+      map.set(key, Object.assign({}, a, { course: c.name, curl: c.url, tag }));
+    };
+    c.upcoming.forEach(a => add(a, "即将截止"));
+    c.new_assignments.forEach(a => {
+      const iso = a.due_iso;
+      if (iso && new Date(iso).getTime() > Date.now()) add(a, "新布置");
+    });
+  });
+  return [...map.values()].sort((x, y) => {
+    const gx = x.due_iso ? new Date(x.due_iso).getTime() : Infinity;
+    const gy = y.due_iso ? new Date(y.due_iso).getTime() : Infinity;
+    return gx - gy;
+  });
+}
+
+function render() {
+  const ws = weeksSorted();
+  if (!ws.length) { renderEmptySite(); return; }
+  if (SEL >= ws.length) SEL = 0;
+  const w = ws[SEL];
+  renderWeekNav();
+  $("updated").textContent = "最近更新：" + (DATA.updated_at || w.generated_at || "—");
+  $("tz-label").textContent = DATA.tz_label || "UTC+8";
+  $("range").textContent = "统计范围 " + (w.range || "过去 7 天");
+  let warning = document.getElementById("fetch-warnings");
+  if (!warning) {
+    warning = document.createElement("div");
+    warning.id = "fetch-warnings";
+    warning.className = "panel";
+    warning.setAttribute("role", "status");
+    $("stats").before(warning);
+  }
+  warning.style.display = w.warnings && w.warnings.length ? "" : "none";
+  warning.innerHTML = (w.warnings || []).length
+    ? "<strong>⚠️ 部分课程内容未能读取，可稍后刷新重试</strong><ul>" +
+      w.warnings.map((s) => "<li>" + esc(s) + "</li>").join("") + "</ul>" : "";
+
+  const cn = (k) => (w.courses || []).reduce((s, c) => s + c[k].length, 0);
+  const todo = allTodo(w);
+  const nums = [["课程", (w.courses || []).length, 0], ["新任务", cn("new_assignments"), 0],
+                ["待办", todo.length, todo.length ? 1 : 0], ["新资料", cn("new_files"), 0],
+                ["公告", cn("announcements"), 0]];
+  $("stats").innerHTML = nums.map(([label, n, hot]) =>
+    `<div class="stat${hot ? " hot" : ""}"><b>${n}</b><span>${label}</span></div>`).join("");
+
+  $("todo-cnt").textContent = todo.length ? todo.length + " 项" : "";
+  $("todo").innerHTML = todo.length
+    ? todo.map(a => {
+        const d = due(a.due_iso, a.due_at);
+        return `<div class="row">
+          <span class="ico">${d.cls === "urgent" ? "🔴" : d.cls === "soon" ? "🟠" : d.cls === "over" ? "⚪" : "🟢"}</span>
+          <span class="grow">
+            <a href="${safeHref(a.url)}" target="_blank" rel="noopener">${esc(a.name)}</a>
+            <span class="sub">${esc(a.course)}${a.points !== null && a.points !== undefined ? " · " + esc(a.points) + " 分" : ""}</span>
+          </span>
+          ${subChip(a)}
+          <span class="tail"><span class="due ${d.cls}">${esc(d.when)}${d.label ? `<span>${d.label}</span>` : ""}</span></span>
+        </div>`;
+      }).join("")
+    : `<div class="good">未来 7 天没有临近的截止任务，可以安心复习本周新资料 👍</div>`;
+
+  const fresh = [];
+  (w.courses || []).forEach(c => c.new_assignments.forEach(a => fresh.push({ a, c })));
+  fresh.sort((x, y) => {
+    const gx = x.a.due_iso ? new Date(x.a.due_iso).getTime() : Infinity;
+    const gy = y.a.due_iso ? new Date(y.a.due_iso).getTime() : Infinity;
+    return gx - gy;
+  });
+  $("fresh-cnt").textContent = fresh.length ? fresh.length + " 项" : "";
+  $("fresh").innerHTML = fresh.length
+    ? fresh.map(({ a, c }) => {
+        const d = due(a.due_iso, a.due_at);
+        return `<div class="row">
+          <span class="ico" title="${esc(a.kind || "")}">${KIND_ICON[a.kind] || "📌"}</span>
+          <span class="grow">
+            <a href="${safeHref(a.url)}" target="_blank" rel="noopener">${esc(a.name)}</a>
+            <span class="sub">${esc(c.name)}${a.points !== null && a.points !== undefined ? " · " + esc(a.points) + " 分" : ""}</span>
+          </span>
+          ${subChip(a)}
+          <span class="tail"><span class="due ${d.cls}">${esc(d.when)}${d.label ? `<span>${d.label}</span>` : ""}</span></span>
+        </div>`;
+      }).join("")
+    : `<div class="empty">本周没有新布置的任务。</div>`;
+
+  const act = (w.courses || []).filter(active).sort((a, b) => score(b) - score(a));
+  const quiet = (w.courses || []).filter(c => !active(c));
+  $("courses").innerHTML = act.length
+    ? act.map((c, i) => courseCard(c, i < 2)).join("")
+    : `<div class="panel empty">本周所有课程都没有新动态。</div>`;
+  $("quiet-cnt").textContent = quiet.length ? quiet.length + " 门" : "";
+  $("quiet-panel").style.display = quiet.length ? "" : "none";
+  $("quiet").innerHTML = quiet.map(c =>
+    `<span class="qchip">${esc(c.name)}</span>`).join("");
+}
+
+function renderSearch(q) {
+  const key = q.toLowerCase();
+  const hits = { assign: [], file: [], ann: [] };
+  weeksSorted().forEach((w, wi) => {
+    (w.courses || []).forEach(c => {
+      c.new_assignments.forEach(a => {
+        if ((a.name || "").toLowerCase().includes(key)) hits.assign.push({ a, c, w, wi });
+      });
+      c.new_files.forEach(f => {
+        if ((f.name || "").toLowerCase().includes(key)) hits.file.push({ f, c, w });
+      });
+      c.announcements.forEach(x => {
+        if (((x.title || "") + (x.summary || "")).toLowerCase().includes(key)) hits.ann.push({ x, c, w });
+      });
+    });
+  });
+  const total = hits.assign.length + hits.file.length + hits.ann.length;
+  const cap = s => `<div class="panel"><h2>${s}</h2><div class="hint">搜索「${esc(q)}」· 跨全部周报归档</div>`;
+  const out = [];
+  out.push(cap(total ? `🔍 找到 ${total} 条结果` : `🔍 没有找到「${esc(q)}」`));
+  if (hits.assign.length) {
+    out.push(`<h4 style="font-size:.85rem;color:var(--brand);margin:10px 0 2px">作业 / 任务</h4>`);
+    out.push(hits.assign.map(({ a, c, w }) => {
+      const d = due(a.due_iso, a.due_at);
+      return `<div class="row"><span class="ico">${KIND_ICON[a.kind] || "📌"}</span>
+        <span class="grow"><a href="${safeHref(a.url)}" target="_blank" rel="noopener">${esc(a.name)}</a>
+        <span class="sub">${esc(c.name)} · <span class="hit-week">周报 ${esc(w.date)}</span></span></span>
+        <span class="tail"><span class="due ${d.cls}">${esc(d.when)}${d.label ? `<span>${d.label}</span>` : ""}</span></span></div>`;
+    }).join(""));
+  }
+  if (hits.file.length) {
+    out.push(`<h4 style="font-size:.85rem;color:var(--brand);margin:14px 0 2px">资料</h4>`);
+    out.push(`<div class="files">${hits.file.map(({ f, c, w }) =>
+      `<span style="display:block">${fileCard(f, c)}<span class="hit-week" style="margin-left:4px">${esc(c.name)} · 周报 ${esc(w.date)}</span></span>`).join("")}</div>`);
+  }
+  if (hits.ann.length) {
+    out.push(`<h4 style="font-size:.85rem;color:var(--brand);margin:14px 0 2px">公告</h4>`);
+    out.push(`<ul class="ann">${hits.ann.map(({ x, c, w }) => `<li>
+      ${x.url ? `<a href="${safeHref(x.url)}" target="_blank" rel="noopener">${esc(x.title)}</a>` : `<strong>${esc(x.title)}</strong>`}
+      <span class="atext">（${esc(x.created_at)} · ${esc(c.name)} · 周报 ${esc(w.date)}）${esc(x.summary)}…</span></li>`).join("")}</ul>`);
+  }
+  out.push(`</div>`);
+  $("week-nav").style.display = "none";
+  ["stats", "todo-panel", "fresh-panel", "courses", "quiet-panel"].forEach(id => $(id).style.display = "none");
+  const box = $("search-results");
+  box.style.display = "";
+  box.innerHTML = out.join("");
+}
+
+function renderEmptySite() {
+  $("stats").innerHTML = "";
+  $("todo").innerHTML = `<div class="empty">暂无数据。</div>`;
+  $("fresh").innerHTML = `<div class="empty">暂无数据。</div>`;
+  $("courses").innerHTML = `<div class="panel empty">暂无周报数据。首次自动化运行后（需先在 canvas_config.json 配置 Canvas Token）这里会显示课程动态。</div>`;
+  $("quiet-panel").style.display = "none";
+}
+
+/* ================= 交互 ================= */
+$("q").addEventListener("input", e => {
+  Q = e.target.value.trim();
+  if (Q) renderSearch(Q);
+  else {
+    $("search-results").style.display = "none";
+    $("week-nav").style.display = "";
+    ["stats", "todo-panel", "fresh-panel", "courses", "quiet-panel"].forEach(id => $(id).style.display = "");
+    render();
+  }
+});
+
+const THEME_KEY = "canvas-hub-theme";
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  $("theme").textContent = t === "dark" ? "☀️" : "🌙";
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+$("theme").onclick = () =>
+  setTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+(function initTheme() {
+  let t = null;
+  const p = new URLSearchParams(location.search).get("theme");
+  if (p === "dark" || p === "light") t = p;          // 支持 ?theme=dark 手动指定
+  if (!t) { try { t = localStorage.getItem(THEME_KEY); } catch (e) {} }
+  if (!t) t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  setTheme(t);
+})();
+
+/* ================= 启动 ================= */
+const box = document.createElement("section");
+box.id = "search-results";
+box.style.display = "none";
+$("quiet-panel").after(box);
+
+function boot(data) {
+  DATA = data || { weeks: [] };
+  if (DATA.canvas_url) $("canvas-link").href = DATA.canvas_url;
+  // 自包含单文件模式：把内联的日历内容变成可下载链接
+  if (window.__HUB_ICS__) {
+    const a = $("ics-link");
+    a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(window.__HUB_ICS__);
+    a.removeAttribute("target");
+  }
+  render();
+}
+
+window.__HUB_BOOT__ = function () {
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem("hubData") || "null"); } catch (e) {}
+  if (window.__HUB_DATA__) {
+    boot(window.__HUB_DATA__);          // 双击打开的单文件：数据已内嵌
+  } else if (stored && stored.weeks && stored.weeks.length) {
+    boot(stored);                        // 网页版：浏览器本地数据
+  } else if (typeof showSetup === "function") {
+    showSetup();                         // 网页版：首次使用 → 设置向导
+  } else {
+    fetch("data.json", { cache: "no-store" })
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(boot)
+      .catch(() => {
+        $("updated").textContent = "无法加载 data.json";
+        $("courses").innerHTML = `<div class="panel empty">暂无数据，请先完成设置或抓取。</div>`;
+      });
+  }
+};
+</script>
+<script>
+/* 本地引擎一键刷新：仅当页面由 serve_board.py 托管（存在 /refresh 探测接口）时启用 */
+(function () {
+  const b = document.getElementById("engine-refresh-btn");
+  if (!b) return;
+  fetch("/refresh?probe=1").then(r => r.json()).then(j => {
+    if (j && j.probe) b.style.display = "";
+  }).catch(() => {});
+  b.onclick = async () => {
+    b.disabled = true; const old = b.textContent; b.textContent = "刷新中…";
+    try {
+      const r = await fetch("/refresh", { method: "POST" });
+      const j = await r.json();
+      if (j.ok && j.data) {
+        boot(j.data);
+        const u = document.getElementById("updated");
+        if (u) u.textContent = "最近更新：" + (j.data.updated_at || "") + "（刚刚刷新）";
+      } else {
+        alert("刷新失败：" + (j.log || "未知错误，可在 ZCode 里运行 python canvas_weekly_report.py 排查"));
+      }
+    } catch (e) { alert("刷新失败：" + e); }
+    b.disabled = false; b.textContent = old;
+  };
+})();
+</script>
+<script>
+/* ===== 网页版扩展：设置向导 + 抓取 + 导出（由 web/build_web.py 注入 web/index.html） ===== */
+/* 依赖主脚本中的全局：$、esc、boot、render、DATA、buildIcsText（本文件提供） */
+
+const WEBSITE_FILE = "我的学习网站.html";
+const HUB_MANAGED_ORIGIN = window.__HUB_WORKER_ORIGIN__ || "";
+
+const HUB_STORE = {
+  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } },
+  set(k, v) {
+    try { localStorage.setItem(k, v); }
+    catch (e) { throw new Error("浏览器无法保存数据：存储已禁用或空间不足。请允许本站存储或换用其他浏览器。"); }
+  },
+  del(k) { localStorage.removeItem(k); },
+};
+
+// 一组相关数据一起保存，失败时尽量恢复旧值，避免看板与快照不一致。
+function storeTogether(values) {
+  const old = {};
+  try {
+    for (const k of Object.keys(values)) old[k] = localStorage.getItem(k);
+  } catch (e) { throw new Error("无法读取浏览器存储，请允许本站存储后重试。"); }
+  try {
+    for (const k of Object.keys(values)) HUB_STORE.set(k, values[k]);
+  } catch (e) {
+    for (const k of Object.keys(old)) {
+      try { old[k] === null ? localStorage.removeItem(k) : localStorage.setItem(k, old[k]); }
+      catch (restoreError) { /* 保留最初的存储错误供用户处理 */ }
+    }
+    throw e;
+  }
+}
+
+function normalizeOrigin(value, label) {
+  let u;
+  try { u = new URL(String(value || "").trim()); }
+  catch (e) { throw new Error(label + "应是完整的 HTTPS 地址，例如 https://canvas.cityu.edu.hk"); }
+  if (u.protocol !== "https:" || !u.hostname || u.username || u.password || u.search || u.hash ||
+      !["", "/"].includes(u.pathname)) {
+    throw new Error(label + "只需填写 HTTPS 站点地址，不要附带页面路径、账号或查询参数");
+  }
+  return u.origin;
+}
+
+function validateHubCfg(cfg) {
+  const c = Object.assign({}, cfg);
+  // 本地浏览器验收允许同源 loopback HTTP；部署页面仍使用自己的 HTTPS 站点。
+  const managedLocal = HUB_MANAGED_ORIGIN && c.worker === HUB_MANAGED_ORIGIN &&
+    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(c.worker);
+  c.worker = managedLocal ? c.worker : normalizeOrigin(c.worker, "小助手地址");
+  c.canvasUrl = normalizeOrigin(c.canvasUrl, "Canvas 地址");
+  c.token = String(c.token || "").trim();
+  if (!c.token || /\s/.test(c.token)) throw new Error("请填写完整的 Canvas 访问令牌，不要带空格或换行");
+  if (c.expires) {
+    const d = new Date(c.expires + "T00:00:00Z");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(c.expires) || isNaN(d) || d.toISOString().slice(0, 10) !== c.expires)
+      throw new Error("令牌到期日应是有效日期，格式为 YYYY-MM-DD");
+  }
+  return c;
+}
+
+async function requestText(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(url, Object.assign({}, options || {}, { signal: controller.signal }));
+    const body = await response.text();
+    return { response, body };
+  } catch (e) {
+    if (controller.signal.aborted) throw new Error("请求超过 20 秒，请检查网络和小助手地址后重试");
+    if (e instanceof TypeError) throw new Error("网络连接失败，请检查网络、小助手地址和跨域设置");
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+
+let hubBusy = false;
+async function withHubTask(action) {
+  if (hubBusy) throw new Error("已有操作正在进行，请等待完成后再试");
+  hubBusy = true;
+  const ids = ["s-test", "s-fetch", "s-unsub", "s-close", "s-close2", "s-clear", "refresh-btn", "reminder-refresh", "s-import", "s-backup"];
+  ids.push("s-worker", "s-canvas", "s-token", "s-exp", "s-web-entry", "s-agent-entry");
+  const buttons = ids.map((id) => document.getElementById(id)).filter(Boolean);
+  const disabled = buttons.map((b) => b.disabled);
+  buttons.forEach((b) => { b.disabled = true; });
+  try { return await action(); }
+  finally {
+    hubBusy = false;
+    buttons.forEach((b, i) => { b.disabled = disabled[i]; });
+  }
+}
+
+function hubCfg() {
+  return {
+    worker: HUB_MANAGED_ORIGIN || (HUB_STORE.get("hubWorker") || "").trim(),
+    canvasUrl: (HUB_STORE.get("hubCanvasUrl") || "https://canvas.cityu.edu.hk").trim(),
+    token: (HUB_STORE.get("hubToken") || "").trim(),
+    expires: (HUB_STORE.get("hubExpires") || "").trim(),
+    sendkey: (HUB_STORE.get("hubSendKey") || "").trim(),
+    secret: (HUB_STORE.get("hubSecret") || "").trim(),
+  };
+}
+
+/* 更新提醒只检查本地时间；所有 Canvas 操作由用户触发。 */
+const REMINDER_DAY = 86400000;
+let reminderTimer = null;
+let reminderDismissed = "";
+let reminderRevision = 0;
+
+function reminderPrefs() {
+  try {
+    const p = JSON.parse(HUB_STORE.get("hubUpdateReminder") || "null");
+    if (p && typeof p.enabled === "boolean" && Number.isSafeInteger(p.days) && p.days >= 1)
+      return p;
+  } catch (e) { /* 损坏的设置使用默认值 */ }
+  return { enabled: true, days: 3 };
+}
+
+async function refreshBinding(c) {
+  // 绑定学校、个人实例与令牌，不在状态里重复保存明文令牌，也不发送绑定值。
+  const bytes = new TextEncoder().encode(JSON.stringify([c.worker, c.canvasUrl, c.token]));
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function legacyRefreshTime(data) {
+  if (!data) return null;
+  const date = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(data.updated_at || "");
+  const zone = /^UTC([+-]\d+(?:\.\d+)?)$/.exec(data.tz_label || "");
+  if (!date || !zone || Math.abs(Number(zone[1])) > 14) return null;
+  const wall = Date.UTC(+date[1], +date[2] - 1, +date[3], +date[4], +date[5]);
+  const d = new Date(wall);
+  if (d.getUTCFullYear() !== +date[1] || d.getUTCMonth() !== +date[2] - 1 ||
+      d.getUTCDate() !== +date[3] || d.getUTCHours() !== +date[4] || d.getUTCMinutes() !== +date[5]) return null;
+  return wall - Number(zone[1]) * 3600000;
+}
+
+async function currentRefreshState() {
+  const c = hubCfg(), binding = await refreshBinding(c);
+  let state;
+  const raw = HUB_STORE.get("hubRefreshState");
+  try { state = JSON.parse(raw || "null"); } catch (e) {}
+  if (raw !== null && raw !== undefined) {
+    if (state && state.binding === binding && state.version === 1 &&
+        (state.successAt === null || (Number.isFinite(state.successAt) && state.successAt > 0))) return state;
+    // 有状态但身份不匹配或字段损坏时，不用旧历史推断另一个身份的更新时间。
+    return { version: 1, binding, successAt: null };
+  }
+  let data;
+  try { data = JSON.parse(HUB_STORE.get("hubData") || "null"); } catch (e) {}
+  const successAt = c.token && data && data.canvas_url === c.canvasUrl ? legacyRefreshTime(data) : null;
+  return { version: 1, binding, successAt };
+}
+
+function refreshNotice(msg) {
+  const el = document.getElementById("refresh-message");
+  if (el) el.textContent = msg;
+}
+
+async function updateRefreshReminder() {
+  clearTimeout(reminderTimer);
+  const revision = ++reminderRevision;
+  const time = document.getElementById("refresh-time");
+  if (!time) return;
+  try {
+    const state = await currentRefreshState();
+    if (revision !== reminderRevision) return;
+    const p = reminderPrefs();
+    const age = state.successAt === null ? null : Date.now() - state.successAt;
+    time.textContent = state.successAt === null ? "更新时间未知，可手动刷新" :
+      "上次成功更新：" + new Date(state.successAt).toLocaleString("zh-CN", { hour12: false }) + "（设备时区）";
+    const label = document.getElementById("refresh-plan");
+    if (label) label.textContent = p.enabled ? "每 " + p.days + " 天提醒 · 点击才刷新" : "更新提醒已关闭 · 可随时手动刷新";
+    const signature = JSON.stringify([state.binding, state.successAt, p.days]);
+    const banner = document.getElementById("refresh-reminder");
+    if (banner) {
+      banner.hidden = !p.enabled || age === null || age < p.days * REMINDER_DAY || reminderDismissed === signature;
+      document.getElementById("reminder-text").textContent = "课程数据已满 " + p.days + " 天未更新，是否现在刷新？";
+      document.getElementById("reminder-later").onclick = () => {
+        reminderDismissed = signature;
+        updateRefreshReminder();
+      };
+    }
+    if (!document.hidden && p.enabled && age !== null && reminderDismissed !== signature) {
+      // 前台最多每分钟校对；后台不承诺准点触发，恢复可见后重新比较时间戳。
+      const remaining = p.days * REMINDER_DAY - age;
+      reminderTimer = setTimeout(updateRefreshReminder, Math.max(1000, Math.min(60000, remaining > 0 ? remaining : 60000)));
+    }
+  } catch (e) {
+    time.textContent = "更新时间未知，可手动刷新";
+    refreshNotice("无法检查本地更新记录：请允许本站存储并使用支持 HTTPS 的现代浏览器。");
+  }
+}
+
+function loadReminderForm() {
+  const p = reminderPrefs();
+  $("s-reminder-enabled").checked = p.enabled;
+  $("s-reminder-days").value = String(p.days);
+  $("s-reminder-status").textContent = "";
+}
+
+// 同源标签页共享浏览器锁，不排队补抓，也不广播凭证或课程内容。
+async function withCanvasTask(action) {
+  return withHubTask(async () => {
+    if (!navigator.locks || typeof navigator.locks.request !== "function")
+      throw new Error("当前浏览器不支持多标签页刷新保护，请用新版 Edge、Chrome、Firefox 或 Safari 打开个人 HTTPS 网址后重试；旧看板仍可查看");
+    return navigator.locks.request("canvas-hub-user-query", { ifAvailable: true }, async (lock) => {
+      if (!lock) throw new Error("另一个标签页正在查询 Canvas，请等待它完成；本页不会排队重复刷新");
+      return action();
+    });
+  });
+}
+
+function hostOf(url) {
+  return new URL(normalizeOrigin(url, "Canvas 地址")).host;
+}
+
+function tzLabel() {
+  const off = -new Date().getTimezoneOffset() / 60;
+  return "UTC" + (off >= 0 ? "+" : "") + off;
+}
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+function fmtLocal(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ` +
+         `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/* ---------------- Canvas 抓取（经学生自己的 Worker 转发） ---------------- */
+
+function workerApi(path, params, cfg) {
+  const c = validateHubCfg(cfg || hubCfg());
+  const u = c.worker.replace(/\/+$/, "") + "/proxy/" + path.replace(/^\/+/, "");
+  const qs = new URLSearchParams(params || {});
+  return requestText(u + "?" + qs, {
+    headers: { "X-Canvas-Token": c.token, "X-Canvas-Host": hostOf(c.canvasUrl) },
+  }).then(({ response: r, body }) => {
+    const clean = body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const jsonMsg = (() => { try { const j = JSON.parse(body);
+      return (j.error || j.message || (j.errors && j.errors[0] && j.errors[0].message)) || ""; }
+      catch (e) { return ""; } })();
+    if (r.status === 401) throw new Error("令牌无效或已过期（HTTP 401）：请到 Canvas 重新生成");
+    if (r.status === 403) {
+      if (/cloudflare|just a moment|attention required|access denied|blocked|rate limit/i.test(body))
+        throw new Error("Canvas 拒绝访问（HTTP 403）：请求被学校/CDN 的防护拦截（疑似屏蔽云服务器访问）。" +
+          "请稍后重试；若反复出现，请把本条提示和你的小助手地址反馈给作者");
+      throw new Error("Canvas 拒绝访问（HTTP 403）：请检查账号的课程 / 接口权限及学校访问限制；" +
+        "这不等同于令牌过期。" + (jsonMsg ? "详情：" + jsonMsg : ""));
+    }
+    if (r.status >= 500) throw new Error("查询服务返回 HTTP " + r.status +
+      "：请检查个人助手部署、学校接口和网络；此状态不能判断令牌是否过期。" +
+      (jsonMsg ? "详情：" + jsonMsg : "") + " @ " + path);
+    if (!r.ok) throw new Error("Canvas API HTTP " + r.status + (jsonMsg ? "：" + jsonMsg :
+      clean ? "：" + clean.slice(0, 140) : "") + " @ " + path);
+    try { return JSON.parse(body); }
+    catch (e) { throw new Error("小助手返回了非 JSON 数据，请检查是否部署了本项目代码"); }
+  });
+}
+
+async function apiAll(path, params, cfg) {
+  let page = 1, out = [];
+  for (;;) {
+    const arr = await workerApi(path, Object.assign({}, params || {}, { per_page: 100, page: page }), cfg);
+    if (!Array.isArray(arr)) throw new Error("Canvas 列表格式异常，本次数据未保存：" + path);
+    out = out.concat(arr);
+    if (arr.length < 100) break;
+    if (page >= 20) throw new Error("数据达到分页上限，本次数据未保存：" + path);
+    page += 1;
+  }
+  return out;
+}
+
+/* ---------------- 类型判断（与桌面引擎一致） ---------------- */
+
+function assignKind(a) {
+  const t = a.submission_types || [];
+  if (a.is_quiz_assignment || a.quiz_id || t.includes("online_quiz")) return "测验";
+  if (t.includes("discussion_topic")) return "讨论";
+  if (t.includes("online_upload") || t.includes("online_text_entry") || t.includes("online_url")) return "提交作业";
+  if (t.includes("external_tool")) return "外部工具";
+  if (t.includes("not_graded")) return "不计分";
+  return "任务";
+}
+
+function fileKind(name) {
+  const n = (name || "").toLowerCase();
+  if (/\.(ppt|pptx|key)$/.test(n)) return "PPT";
+  if (/\.pdf$/.test(n)) return "PDF";
+  if (/\.(doc|docx|rtf)$/.test(n)) return "Word";
+  if (/\.(xls|xlsx|csv)$/.test(n)) return "Excel";
+  if (/\.(zip|rar|7z|tar|gz)$/.test(n)) return "压缩包";
+  if (/\.(py|ipynb|java|c|cpp|h|m|r|sql)$/.test(n)) return "代码";
+  if (/\.(mp4|mov|avi|mkv)$/.test(n)) return "视频";
+  return "其他";
+}
+
+/* ---------------- 抓取并生成看板 ---------------- */
+
+async function fetchAll(inputCfg, progress) {
+  const cfg = validateHubCfg(inputCfg || hubCfg());
+  const binding = await refreshBinding(cfg);
+  const beforeBinding = await refreshBinding(hubCfg());
+  const report = progress || (() => {});
+  report("正在读取课程列表…");
+  const courses = await apiAll("courses", { enrollment_state: "active", "include[]": "term" }, cfg);
+  const warnings = [];
+
+  let lastState = null;
+  try { lastState = JSON.parse(HUB_STORE.get("hubLastState") || "null"); } catch (e) {}
+  const newState = { assignments: {} };
+
+  const now = new Date();
+  const lookbackStart = new Date(now.getTime() - 7 * 86400000);
+  const upcomingEnd = new Date(now.getTime() + 7 * 86400000);
+
+  const weekCourses = [];
+  for (const c of courses) {
+    const cid = String(c.id);
+    const name = c.name || ("课程" + cid);
+    const code = c.course_code || "";
+    const term = (c.term || {}).name || "";
+    report("正在抓取 " + (weekCourses.length + 1) + "/" + courses.length + "：" + name);
+    const optional = (path, params, label) => apiAll(path, params, cfg).catch((e) => {
+      warnings.push(name + "：" + label + "未能读取（" + e.message + "）");
+      return [];
+    });
+    const [assignments, files, anns] = await Promise.all([
+      apiAll("courses/" + cid + "/assignments", { order_by: "due_at", "include[]": "submission" }, cfg),
+      optional("courses/" + cid + "/files", { sort: "created_at", order: "desc" }, "课件"),
+      optional("courses/" + cid + "/announcements", {}, "公告"),
+    ]);
+
+    const courseState = {};
+    const prevCourse = (lastState && lastState.assignments && lastState.assignments[cid]) || {};
+    const changes = [];
+    const newAssignments = [], upcoming = [];
+
+    for (const a of assignments) {
+      const sub = a.submission || {};
+      const wf = sub.workflow_state;
+      const submitted = ["submitted", "graded", "pending_review"].includes(wf);
+      const graded = wf === "graded";
+      const created = parseTs(a.created_at), updated = parseTs(a.updated_at), due = parseTs(a.due_at);
+      const isNew = !!(created && created >= lookbackStart);
+      const isUpdated = !isNew && !!(updated && updated >= lookbackStart);
+      const aid = String(a.id);
+      courseState[aid] = { name: a.name || "", due_iso: due ? due.toISOString() : null, wf: wf };
+      const prev = prevCourse[aid];
+      if (prev) {
+        if (prev.due_iso && prev.due_iso !== courseState[aid].due_iso) {
+          changes.push({ type: "改期", name: a.name || "未命名任务",
+            detail: "截止时间 " + fmtPrev(prev.due_iso) + " → " + (due ? fmtLocal(due) : "无截止时间") });
+        }
+        if (prev.wf !== "graded" && graded) {
+          changes.push({ type: "新评分", name: a.name || "未命名任务",
+            detail: "已评分：" + (sub.score ?? "-") + " / " + (a.points_possible ?? "-") + " 分" });
+        }
+      }
+      const isDueSoon = !!(due && due >= now && due <= upcomingEnd);
+      if (!isNew && !isUpdated && !isDueSoon) continue;
+      const item = {
+        name: a.name || "未命名任务", kind: assignKind(a),
+        due_at: due ? fmtLocal(due) : "无截止时间",
+        due_iso: due ? due.toISOString() : null,
+        points: a.points_possible, url: a.html_url || "",
+        status: isNew ? "新布置" : (isUpdated ? "有更新" : null),
+        submitted: submitted, graded: graded, score: sub.score,
+      };
+      if (isNew || isUpdated) newAssignments.push(item);
+      if (isDueSoon) upcoming.push(Object.assign({}, item));
+    }
+    for (const aid of Object.keys(prevCourse)) {
+      if (!courseState[aid]) {
+        changes.push({ type: "移除", name: prevCourse[aid].name || aid, detail: "作业已删除或被隐藏" });
+      }
+    }
+    newState.assignments[cid] = courseState;
+
+    const newFiles = [];
+    const filesPage = cfg.canvasUrl.replace(/\/+$/, "") + "/courses/" + cid + "/files";
+    for (const f of files) {
+      const created = parseTs(f.created_at), updated = parseTs(f.updated_at);
+      if (!created || created < lookbackStart) continue;
+      const fname = f.display_name || f.filename || "未命名文件";
+      newFiles.push({
+        name: fname, kind: fileKind(fname),
+        created_at: fmtLocal(created), updated_at: fmtLocal(updated),
+        is_update: !!(updated && updated - created > 3600000),
+        size_bytes: f.size || 0, size_kb: Math.round((f.size || 0) / 1024),
+        url: filesPage,
+      });
+    }
+
+    const newAnns = [];
+    for (const an of anns) {
+      const created = parseTs(an.created_at) || parseTs(an.posted_at);
+      if (!created || created < lookbackStart) continue;
+      newAnns.push({ title: an.title || "无标题公告", created_at: fmtLocal(created),
+                     summary: stripTags(an.message || ""), url: an.html_url || "" });
+    }
+
+    weekCourses.push({ name: name, code: code, term: term,
+      url: cfg.canvasUrl.replace(/\/+$/, "") + "/courses/" + cid,
+      new_assignments: newAssignments, upcoming: upcoming,
+      new_files: newFiles, announcements: newAnns, changes: changes });
+  }
+
+  const week = {
+    date: fmtDate(now), generated_at: fmtLocal(now),
+    range: fmtDate(new Date(now.getTime() - 7 * 86400000)) + " ~ " + fmtDate(now),
+    courses: weekCourses, warnings: warnings,
+  };
+
+  // 合并历史（最多 52 周）
+  let weeks = [];
+  try { weeks = (JSON.parse(HUB_STORE.get("hubData") || "null") || {}).weeks || []; } catch (e) {}
+  weeks = weeks.filter((x) => x.date !== week.date);
+  weeks.unshift(week);
+  const payload = {
+    site_title: "我的学习中心", canvas_url: cfg.canvasUrl, username: "",
+    tz_label: tzLabel(), updated_at: week.generated_at, weeks: weeks.slice(0, 52),
+  };
+  if (await refreshBinding(hubCfg()) !== beforeBinding)
+    throw new Error("查询期间配置已在其他页面更改，本次结果未保存，请按当前配置重新刷新");
+  const successAt = Date.now();
+  payload.updated_at = fmtLocal(new Date(successAt));
+  storeTogether(Object.assign({}, inputCfg ? configValues(cfg) : {}, {
+    hubData: JSON.stringify(payload), hubLastState: JSON.stringify(newState),
+    hubRefreshState: JSON.stringify({ version: 1, binding, successAt }),
+  }));
+  reminderDismissed = "";
+  updateRefreshReminder();
+  return payload;
+}
+
+function fmtDate(d) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+function fmtPrev(iso) {
+  const d = iso ? new Date(iso) : null;
+  return d && !isNaN(d) ? fmtLocal(d) : "无截止时间";
+}
+function stripTags(html) {
+  return String(html || "").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ").trim().slice(0, 160);
+}
+function parseTs(s) {
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/* ---------------- ICS（浏览器端生成） ---------------- */
+
+function icsEsc(s) {
+  return String(s === null || s === undefined ? "" : s)
+    .replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+}
+
+function buildIcsText(data, daysAhead) {
+  daysAhead = daysAhead || 60;
+  const now = Date.now();
+  const end = now + daysAhead * 86400000;
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0",
+    "PRODID:-//canvas-weekly-hub//web//CN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "X-WR-CALNAME:Canvas 截止日历"];
+  let count = 0;
+  for (const w of (data.weeks || [])) {
+    for (const c of (w.courses || [])) {
+      const seen = new Set();
+      const pool = (c.upcoming || []).concat(c.new_assignments || []);
+      for (const a of pool) {
+        const dt = a.due_iso ? new Date(a.due_iso) : null;
+        if (!dt || isNaN(dt) || dt.getTime() < now || dt.getTime() > end) continue;
+        const key = (a.url || "") + "|" + a.name;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const z = (x) => x.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+        const mark = a.graded ? "（已评分）" : (a.submitted ? "（已提交）" : "");
+        lines.push("BEGIN:VEVENT",
+          `UID:${(count++)}@canvas-weekly-hub`, `DTSTAMP:${stamp}`,
+          `DTSTART:${z(dt)}`, `DTEND:${z(new Date(dt.getTime() + 15 * 60000))}`,
+          `SUMMARY:${icsEsc("[" + (c.code || c.name) + "] " + a.name + mark)}`,
+          `DESCRIPTION:${icsEsc(a.url || "")}`,
+          "BEGIN:VALARM", "TRIGGER:-PT2H", "ACTION:DISPLAY",
+          `DESCRIPTION:${icsEsc(a.name)}`, "END:VALARM", "END:VEVENT");
+      }
+    }
+  }
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n") + "\r\n";
+}
+
+/* ---------------- 导出：我的学习网站.html / ics ---------------- */
+
+async function downloadWebsite() {
+  const data = JSON.parse(HUB_STORE.get("hubData") || "null");
+  if (!data || !data.weeks || !data.weeks.length) {
+    alert("还没有数据，请先连接并生成看板");
+    return;
+  }
+  const r = await fetch(HUB_MANAGED_ORIGIN ? "/site-template/index.html" : "../site-template/index.html");
+  if (!r.ok) throw new Error("无法读取页面模板（HTTP " + r.status + "）");
+  const tpl = await r.text();
+  const ics = buildIcsText(data);
+  const safeJson = (value) => JSON.stringify(value).replace(/</g, "\\u003c");
+  const inject = "<script>window.__HUB_DATA__ = " + safeJson(data) +
+                 ";window.__HUB_ICS__ = " + safeJson(ics) + ";<\/script>\n</head>";
+  const blob = new Blob([tpl.replace("</head>", inject)], { type: "text/html;charset=utf-8" });
+  triggerDownload(blob, WEBSITE_FILE);
+}
+
+function triggerDownload(blob, filename) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+
+function downloadIcs() {
+  const data = JSON.parse(HUB_STORE.get("hubData") || "null");
+  if (!data) { alert("还没有数据，请先抓取"); return; }
+  triggerDownload(new Blob([buildIcsText(data)], { type: "text/calendar;charset=utf-8" }), "deadlines.ics");
+}
+
+/* ---------------- 设置浮层 ---------------- */
+
+const AGENT_SETUP_PROMPT = [
+  "请协助我在本机配置 Canvas Weekly Hub v2.2 的 Python 路线。",
+  "1. 先读取 README.md、docs/部署指南.md、config/canvas_config.example.json、canvas_weekly_report.py 和 serve_board.py，按实际实现操作。先确认学校允许个人 API 使用；此项目使用手动令牌，不能据此认定是学校批准的应用。",
+  "2. 优先使用已有 Python 3.8+ 环境；引擎仅用标准库。安装软件或依赖前征求同意。不要把 agent 路线描述成无需运行环境。",
+  "3. 复制配置示例为本地 canvas_config.json，让我自己在本地填写学校 Canvas 地址与 Token，不要求把真实 Token 粘贴进聊天或提示词。不要读取或输出 Token 到聊天、日志、截图或 Git 提交；排错只展示脱敏信息。",
+  "4. 保持 github.push_enabled=false，不自动上传课程数据，不自动 commit、push 或部署云端资源。",
+  "5. 用选定的 Python 解释器先执行 canvas_weekly_report.py --check-config；该检查仅验证配置格式，不证明令牌或课程权限有效。通过后再运行 canvas_weekly_report.py，依据真实输出汇报，不编造课程内容。",
+  "6. 成功后打开生成的“我的学习网站.html”离线快照，或用同一解释器运行 serve_board.py，访问 http://localhost:8137/。默认配置与产物在项目目录；设置 CANVAS_HUB_DATA_DIR 后使用该目录。",
+  "7. 如需自动更新，配置本机 agent 或系统计划任务定时运行引擎，电脑与运行环境需要在线。本地 Python 直接查询学校，不需要 Cloudflare、KV 或云端定时器。",
+  "8. 若你是云端 agent，请在读取配置或课程产物前说明：输入的凭证、读取的课程内容可能进入模型服务商，不能宣称全程只在本机处理。优先让我自行填 Token 并运行，只提供脱敏的报错。"
+].join("\n");
+
+function showSetup() {
+  let ov = document.getElementById("setup-overlay");
+  if (ov) {
+    const saved = hubCfg();
+    const fields = { "s-worker": "worker", "s-canvas": "canvasUrl", "s-token": "token",
+                     "s-exp": "expires" };
+    for (const id of Object.keys(fields)) $(id).value = saved[fields[id]];
+    $("s-status").textContent = "";
+    $("worker-check").textContent = "";
+    $("s-capabilities").textContent = "v2.2 暂停云端订阅与微信提醒；日历仍可下载后导入。";
+    $("s-unsub").hidden = !saved.secret;
+    loadReminderForm();
+    ov.style.display = "flex";
+    if (!HUB_MANAGED_ORIGIN) $("s-worker").dispatchEvent(new Event("input"));
+    $("s-canvas").dispatchEvent(new Event("input"));
+    return;
+  }
+  ov = document.createElement("div");
+  ov.id = "setup-overlay";
+  const cfg = hubCfg();
+  ov.innerHTML = `
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+    <div class="setup-head">
+      <h3 id="setup-title" style="flex:1">${HUB_MANAGED_ORIGIN ? "连接你的 Canvas" : "创建你的课程助手"} <small class="version-badge">v2.2</small></h3>
+      <a class="btn" href="${HUB_MANAGED_ORIGIN ? "/overview" : "./overview.html"}" target="_blank" rel="noopener">系统概述</a>
+      <button class="btn" id="s-close" aria-label="关闭设置">✕</button>
+    </div>
+    <p class="hint">${HUB_MANAGED_ORIGIN ? "助手已就绪。粘贴自己的 Canvas 令牌，点击下方按钮即可生成看板。" : "先创建属于自己的网页。之后只需填 Canvas 令牌，不用配置代理地址。"}</p>
+    <div class="bar">
+      <a class="btn" id="s-cityu-login" href="https://canvas.cityu.edu.hk/" target="_blank" rel="noopener noreferrer">登录城大 Canvas ↗</a>
+    </div>
+    <p class="hint">登录学校 Canvas，到“账户 → 设置”获取访问令牌。</p>
+    <div class="bar" aria-label="选择配置方式">
+      <button class="btn primary" id="s-web-entry" aria-controls="s-web-panel" aria-expanded="true">基础版</button>
+      <button class="btn" id="s-agent-entry" aria-controls="s-agent-panel" aria-expanded="false">升级版</button>
+    </div>
+    <p class="hint">基础版：网页部署与看板，适合普通用户。升级版：本地 Python / agent 配置，适合有 agent 使用经验的用户。</p>
+    <section id="s-agent-panel" class="fstep" hidden>
+      <div class="fstep-h">本地 Python / agent 配置</div>
+      <ol class="setup-steps">
+        <li>下载或克隆项目，优先使用已有 Python 3.8+ 环境。引擎仅用标准库；本路线需要电脑上的运行环境。</li>
+        <li>复制 config/canvas_config.example.json 为 canvas_config.json，在本地填写学校 Canvas 地址和自己的 Token，保持 github.push_enabled=false。</li>
+        <li>先执行配置检查，通过后再运行抓取引擎。检查只验证格式，不验证学校权限。</li>
+        <li>成功后打开“我的学习网站.html”离线快照；或启动 serve_board.py，访问 http://localhost:8137/ 查看本地看板。</li>
+        <li>自动更新由自己的 agent 或系统计划任务定时启动引擎；电脑、运行环境和网络需要在线。</li>
+      </ol>
+      <pre class="agent-code">python canvas_weekly_report.py --check-config
+python canvas_weekly_report.py
+python serve_board.py</pre>
+      <p class="hint">在项目目录使用同一个 Python 解释器执行。本地 Python 直接查询学校，不需要 Cloudflare、KV 或云端定时器。</p>
+      <p class="hint">不要把真实 Token 发到聊天。云端 agent 读取凭证或课程内容时，这些信息可能进入模型服务商，不能称为全程本机处理。</p>
+      <div class="bar"><button class="btn primary" id="s-agent-copy">复制给 agent 的配置提示词</button>
+        <a class="btn" href="https://github.com/Famalhaut04/canvas-weekly-hub/blob/main/docs/%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97.md" target="_blank" rel="noopener noreferrer">本地部署指南 ↗</a></div>
+      <div id="s-agent-status" class="status" role="status" aria-live="polite"></div>
+      <details id="s-agent-copy-details" class="faq"><summary>查看并手动复制提示词</summary>
+        <label for="s-agent-prompt">提示词不包含你的配置或 Token</label>
+        <textarea id="s-agent-prompt" rows="9" readonly spellcheck="false"></textarea>
+      </details>
+    </section>
+    <div id="s-web-panel">
+
+    <section id="s-deploy" ${HUB_MANAGED_ORIGIN ? "hidden" : ""} class="fstep">
+      <div class="fstep-h">第一次使用：选择一种创建方式</div>
+      <a class="btn primary" href="https://deploy.workers.cloudflare.com/?url=https://github.com/Famalhaut04/canvas-weekly-hub" target="_blank" rel="noopener">一键创建（需 Cloudflare + GitHub 账号）</a>
+      <p class="hint">按部署页面完成授权，部署成功后打开自己的网址。网页与查询代理一起部署，数据不经过作者服务器。</p>
+      <details class="faq" id="s-email"><summary>只有邮箱？按这 3 步创建</summary>
+        <ol class="setup-steps">
+          <li>注册并验证邮箱，登录 <a href="https://dash.cloudflare.com" target="_blank" rel="noopener">Cloudflare</a>，进入 Workers &amp; Pages → Create application，选择 Hello World 创建 Worker 并 Deploy。</li>
+          <li>点击下方“复制部署代码”，在 Edit code 中全选替换原代码，再点 Deploy。</li>
+          <li>从 Worker 概览 / Domains &amp; Routes 打开正式网址，收藏它；不要用编辑器预览网址。看到“连接你的 Canvas”后再填写令牌。</li>
+        </ol>
+        <div class="bar"><button class="btn primary" id="s-copycode">复制部署代码</button>
+          <a class="btn" href="../worker.js" download="canvas-weekly-hub-v2.2.js">下载部署代码</a></div>
+        <p class="hint">复制的是完整 worker.js，不是 worker/runtime.js。创建按钮名称可能变化，详见下方教程。不需要 KV、定时器或 SendKey，也不用安装软件。</p>
+      </details>
+      <p class="hint"><a href="https://github.com/Famalhaut04/canvas-weekly-hub/blob/main/docs/Cloudflare%E9%83%A8%E7%BD%B2%E5%9B%BE%E6%96%87%E6%95%99%E7%A8%8B.md" target="_blank" rel="noopener">打开分步部署教程</a></p>
+    </section>
+
+    ${HUB_MANAGED_ORIGIN ? "<section class=\"fstep\">" : "<details class=\"faq\" id=\"s-legacy\" " + (cfg.worker && cfg.token ? "open" : "") + "><summary>已有旧版小助手？继续使用原配置</summary>"}
+      <div class="frow" ${HUB_MANAGED_ORIGIN ? "hidden" : ""}><label for="s-worker">小助手地址</label>
+        <input id="s-worker" type="url" autocomplete="off" spellcheck="false" placeholder="https://你的助手.workers.dev"></div>
+      <div class="frow"><label for="s-token">Canvas 令牌</label><input id="s-token" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴自己的访问令牌"></div>
+      <p class="hint">从 <a id="s-token-help" href="https://canvas.cityu.edu.hk/profile/settings" target="_blank" rel="noopener noreferrer">Canvas 账户 → 设置 → 新访问令牌</a> 获取，填写用途及学校要求的到期日，按只显示一次处理：生成后立即复制并返回这里，丢失时创建 / 再生。具体能否重看以学校界面为准。看不到创建按钮请联系学校；令牌本身不保证只读。</p>
+      <div class="frow"><label></label><button class="btn primary" id="s-fetch">连接并生成看板</button></div>
+      <details class="faq" id="s-advanced"><summary>其他学校 / 到期日 / 连接检查</summary>
+        <div class="frow"><label for="s-canvas">Canvas 地址</label><input id="s-canvas" type="url" spellcheck="false" placeholder="https://canvas.cityu.edu.hk"></div>
+        <div class="frow"><label for="s-exp">令牌到期日</label><input id="s-exp" type="date"></div>
+        <p class="hint">默认香港城市大学。这里的到期日是选填提醒，不会更改学校令牌期限；学校生成页可能要求填写。只填学校 HTTPS 域名，不附带页面路径。</p>
+        <button class="btn" id="s-test">仅检查连接</button>
+      </details>
+    ${HUB_MANAGED_ORIGIN ? "</section>" : "</details>"}
+    <div class="status" id="s-status" role="status" aria-live="polite"></div>
+
+    <section class="fstep" aria-labelledby="s-reminder-title">
+      <div class="fstep-h" id="s-reminder-title">更新提醒</div>
+      <p><label><input id="s-reminder-enabled" type="checkbox"> 开启更新提醒</label></p>
+      <div class="frow"><label for="s-reminder-days">提醒间隔（天）</label>
+        <input id="s-reminder-days" type="number" min="1" step="1" inputmode="numeric"></div>
+      <p class="hint">默认 3 天。到期只显示提示，不自动查询 Canvas；关闭页面后不会提醒，下次打开再检查。设置仅保存在当前浏览器。</p>
+      <button class="btn" id="s-reminder-save">保存提醒设置</button>
+      <div id="s-reminder-status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <p class="hint" id="s-capabilities">v2.2 暂停云端订阅与微信提醒；日历仍可下载后导入。</p>
+    <button class="btn" id="s-unsub" ${cfg.secret ? "" : "hidden"}>停用旧版云端订阅</button>
+    <details class="faq"><summary>离线查看 / 旧版数据迁移</summary>
+      <div class="bar"><button class="btn" id="s-dlsite">下载离线看板</button><button class="btn" id="s-backup">备份看板数据</button>
+        <button class="btn" id="s-import">导入历史数据</button><input id="s-import-file" type="file" accept=".json,application/json" hidden></div>
+      <p class="hint">换网址、浏览器或设备时，先在旧页面备份，再导入。备份排除配置中的令牌、SendKey 和订阅密钥，但课程内容并未匿名化；导入会替换当前看板，建议先备份。离线 HTML 是导出时的快照，不会自动更新。</p>
+    </details>
+    <p class="hint">连接成功或抓取成功后才保存输入。普通看板的数据与令牌保存在当前浏览器。</p>
+    </div>
+    <div class="setup-head" style="justify-content:space-between;margin-top:12px">
+      <button class="btn" id="s-clear" style="color:#c0392b">清除本机数据</button><button class="btn" id="s-close2">关闭</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+
+  loadReminderForm();
+  $("s-reminder-save").onclick = () => {
+    try {
+      const raw = $("s-reminder-days").value.trim();
+      const days = Number(raw);
+      if (!/^\d+$/.test(raw) || !Number.isSafeInteger(days) || days < 1)
+        throw new Error("提醒天数应是至少 1 天的正整数");
+      const p = { enabled: $("s-reminder-enabled").checked, days };
+      HUB_STORE.set("hubUpdateReminder", JSON.stringify(p));
+      $("s-reminder-status").textContent = p.enabled ? "已保存：每 " + days + " 天提醒，点击才刷新。" : "已关闭提醒，仍可随时点击“刷新课程”。";
+      updateRefreshReminder();
+    } catch (e) { $("s-reminder-status").textContent = "未保存：" + e.message; }
+  };
+
+  $("s-agent-prompt").value = AGENT_SETUP_PROMPT;
+  const chooseRoute = (agent) => {
+    $("s-agent-panel").hidden = !agent;
+    $("s-web-panel").hidden = agent;
+    $("s-agent-entry").className = agent ? "btn primary" : "btn";
+    $("s-web-entry").className = agent ? "btn" : "btn primary";
+    $("s-agent-entry").setAttribute("aria-expanded", String(agent));
+    $("s-web-entry").setAttribute("aria-expanded", String(!agent));
+  };
+  $("s-agent-entry").onclick = () => chooseRoute(true);
+  $("s-web-entry").onclick = () => chooseRoute(false);
+  $("s-agent-copy").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(AGENT_SETUP_PROMPT);
+      $("s-agent-status").textContent = "已复制提示词，不含你的配置或 Token。";
+    } catch (e) {
+      $("s-agent-copy-details").open = true;
+      $("s-agent-prompt").focus();
+      $("s-agent-prompt").select();
+      $("s-agent-status").textContent = "复制失败：浏览器未允许访问剪贴板。请在下方手动全选复制提示词。";
+    }
+  };
+
+  $("s-worker").value = cfg.worker;
+  $("s-canvas").value = cfg.canvasUrl;
+  $("s-token").value = cfg.token;
+  $("s-exp").value = cfg.expires;
+  const updateTokenHelp = () => {
+    try { $("s-token-help").href = normalizeOrigin($("s-canvas").value, "Canvas 地址") + "/profile/settings"; }
+    catch (e) { $("s-token-help").href = "https://canvas.cityu.edu.hk/profile/settings"; }
+  };
+  $("s-canvas").addEventListener("input", updateTokenHelp);
+  updateTokenHelp();
+
+
+  const status = (msg, color) => {
+    const el = $("s-status");
+    el.textContent = msg;
+    el.style.color = color || "";
+  };
+  const S_WARN = "#c0392b", S_OK = "#0f8a4f";
+
+  const showCapabilities = (info) => {
+    $("s-capabilities").textContent = info.version === "2.2"
+      ? "v2.2 已连接。云端订阅与微信提醒暂停，日历可下载后导入。"
+      : "小助手使用旧版代码，看板可用；建议更新到 v2.2。云端订阅入口已暂停。";
+  };
+
+  const checkWorker = async (c) => {
+    let result = await requestText(c.worker + "/health");
+    if (result.response.status === 404) result = await requestText(c.worker + "/");
+    const { response, body } = result;
+    let info;
+    try { info = JSON.parse(body); } catch (e) { /* 下面提供统一提示 */ }
+    if (!response.ok) throw new Error("小助手服务返回 HTTP " + response.status + "：先检查 Cloudflare 部署、访问保护或服务状态；尚未验证 Canvas 令牌");
+    if (!info || info.name !== "canvas-weekly-hub proxy" || info.ok !== true)
+      throw new Error("小助手代码不正确：请在 Cloudflare 全选替换为本项目 Worker 代码并 Deploy");
+    showCapabilities(info);
+    return info;
+  };
+
+  $("s-close").onclick = () => { ov.style.display = "none"; };
+  $("s-close2").onclick = () => { ov.style.display = "none"; };
+  $("s-test").onclick = async () => {
+    try {
+      await withCanvasTask(async () => {
+        const c = readSetup();
+        status("正在检查小助手和 Canvas 令牌…");
+        await checkWorker(c);
+        const me = await workerApi("users/self", {}, c);
+        if (!me || !me.id) throw new Error("Canvas 返回的用户信息不完整，本次配置未保存");
+        await saveSetup(c);
+        status("✅ 身份验证成功，配置已保存：" + (me.name || me.short_name || "已认证") + "。课程尚未读取，请点击“连接并生成看板”验证课程权限。", S_OK);
+      });
+    } catch (e) { status("❌ " + e.message, S_WARN); }
+  };
+  $("s-fetch").onclick = async () => {
+    try {
+      await withCanvasTask(async () => {
+        const c = readSetup();
+        await checkWorker(c);
+        const me = await workerApi("users/self", {}, c);
+        if (!me || !me.id) throw new Error("Canvas 认证失败，本次配置未保存");
+        const data = await fetchAll(c, status);
+        status("✅ 完成：" + data.weeks[0].courses.length + " 门课程已生成看板", S_OK);
+        boot(data);
+        showFirstTip();
+        refreshNotice(data.weeks[0].warnings.length ? "看板已更新，部分内容未能读取，详见课程警告。" : "课程已更新并保存在本浏览器。");
+        if (!data.weeks[0].warnings.length) ov.style.display = "none";
+        else status("⚠️ 看板已生成，部分内容未能读取：\n" + data.weeks[0].warnings.join("\n"), S_WARN);
+      });
+    } catch (e) { status("❌ " + e.message, S_WARN); }
+  };
+  $("s-unsub").onclick = async () => {
+    try {
+      await withHubTask(async () => {
+        const c = hubCfg();
+        if (!c.secret) throw new Error("本浏览器没有订阅密钥；如曾在其他设备启用，请在那里关闭或在自己的 KV 中移除 cfg: 配置");
+        status("正在关闭云端订阅…");
+        const { response: r, body } = await requestText(c.worker + "/unsubscribe", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ secret: c.secret }),
+        });
+        const j = JSON.parse(body);
+        if (!r.ok || !j.ok) throw new Error("关闭失败，请更新 Worker 或在自己的 KV 中移除 cfg: 配置");
+        storeTogether({ hubSecret: "", hubSendKey: "" });
+        $("s-unsub").hidden = true;
+        $("ics-link").href = "deadlines.ics";
+        status("✅ 云端订阅配置与快照已移除；定时提醒已停用，本机看板保留。旧日历可能仍显示已缓存的事件。", S_OK);
+      });
+    } catch (e) { status("❌ " + e.message, S_WARN); }
+  };
+  // 小助手地址即时连通性检测（输完 0.7 秒自动检查，当场发现填错）
+  const wkInp = $("s-worker");
+  if (!document.getElementById("worker-check")) {
+    const wkSpan = document.createElement("span");
+    wkSpan.id = "worker-check";
+    wkSpan.style.cssText = "font-size:.78rem;margin-left:6px;white-space:nowrap";
+    wkInp.parentElement.appendChild(wkSpan);
+    let wkTimer = null;
+    let wkRevision = 0;
+    const wkRun = async () => {
+      const v = wkInp.value.trim();
+      const revision = wkRevision;
+      const el = $("worker-check");
+      if (!v) { el.textContent = ""; return; }
+      let origin;
+      try { origin = normalizeOrigin(v, "小助手地址"); } catch (e) {
+        el.style.color = S_WARN;
+        el.textContent = "⚠️ " + e.message;
+        return;
+      }
+      el.style.color = ""; el.textContent = "⏳ 正在检查…";
+      try {
+        const { response: r, body } = await requestText(origin + "/");
+        if (revision !== wkRevision) return;
+        let j = null;
+        try { j = JSON.parse(body); } catch (e) {}
+        if (r.ok && j && j.ok === true && j.name === "canvas-weekly-hub proxy") {
+          el.style.color = S_OK; el.textContent = "✅ 小助手在线";
+          showCapabilities(j);
+        } else {
+          el.style.color = S_WARN; el.textContent = "⚠️ 能连上但不是本项目的代码：回 Cloudflare 确认已粘贴";
+        }
+      } catch (e) {
+        if (revision !== wkRevision) return;
+        el.style.color = S_WARN; el.textContent = "❌ 连不上：检查地址拼写，或部署还没完成";
+      }
+    };
+    wkInp.addEventListener("input", () => {
+      wkRevision += 1;
+      $("worker-check").textContent = "";
+      $("s-capabilities").textContent = "v2.2 暂停云端订阅与微信提醒；日历仍可下载后导入。";
+      clearTimeout(wkTimer); wkTimer = setTimeout(wkRun, 700);
+    });
+    if (wkInp.value && !HUB_MANAGED_ORIGIN) wkRun();
+  }
+
+  $("s-copycode").onclick = async () => {
+    try {
+      const r = await fetch("../worker.js");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const code = await r.text();
+      try {
+        await navigator.clipboard.writeText(code);
+        status("✅ 代码已复制。到 Cloudflare 的 Edit code 全选粘贴并 Deploy，然后打开自己的网址。", S_OK);
+      } catch (clipboardError) {
+        triggerDownload(new Blob([code], { type: "text/javascript;charset=utf-8" }), "canvas-weekly-hub-v2.2.js");
+        status("浏览器未允许复制，已下载部署代码；用文本编辑器打开后全选复制到 Cloudflare。", S_WARN);
+      }
+    } catch (e) {
+      status("无法读取部署代码：" + e.message + "。请使用旁边的“下载部署代码”按钮。", S_WARN);
+    }
+  };
+  $("s-dlsite").onclick = async () => {
+    try {
+      await downloadWebsite();
+      status("✅ 已开始下载「我的学习网站.html」——双击即可打开，可拷到手机离线查看", S_OK);
+    } catch (e) {
+      status("❌ 下载失败：" + e.message, S_WARN);
+    }
+  };
+  $("s-backup").onclick = () => {
+    try { downloadBackup(); status("✅ 已下载看板备份，不含令牌或 SendKey。", S_OK); }
+    catch (e) { status("❌ " + e.message, S_WARN); }
+  };
+  $("s-import").onclick = () => $("s-import-file").click();
+  $("s-import-file").onchange = async () => {
+    const file = $("s-import-file").files[0];
+    if (!file) return;
+    try {
+      await withCanvasTask(async () => {
+        if (file.size > 10 * 1024 * 1024) throw new Error("备份文件超过 10 MB，请选择看板导出的 JSON 文件");
+        const backup = validateBackup(JSON.parse(await file.text()));
+        const selectedCanvas = normalizeOrigin($("s-canvas").value, "Canvas 地址");
+        if (normalizeOrigin(backup.data.canvas_url, "备份学校地址") !== selectedCanvas)
+          throw new Error("备份的学校与当前设置不同，请先在“其他学校”选项中填写对应 Canvas 地址");
+        storeTogether({ hubData: JSON.stringify(backup.data), hubLastState: JSON.stringify(backup.state),
+          hubRefreshState: JSON.stringify({ version: 1, binding: await refreshBinding(hubCfg()), successAt: null }) });
+        boot(backup.data);
+        updateRefreshReminder();
+        status("✅ 已导入 " + backup.data.weeks.length + " 份历史记录；令牌未导入，请填写自己的令牌。", S_OK);
+      });
+    } catch (e) { status("❌ 无法导入：" + e.message, S_WARN); }
+    finally { $("s-import-file").value = ""; }
+  };
+  $("s-clear").onclick = () => {
+    if (!confirm("确定清除本浏览器里的全部看板数据与令牌？这不会撤销 Canvas 令牌或云端订阅；如已启用订阅，请先点击“停用旧版云端订阅”。")) return;
+    try {
+    ["hubData", "hubLastState", "hubWorker", "hubCanvasUrl", "hubToken",
+     "hubExpires", "hubSendKey", "hubSecret", "hubUpdateReminder", "hubRefreshState"].forEach((k) => HUB_STORE.del(k));
+    reminderDismissed = "";
+    updateRefreshReminder();
+    status("已清除。刷新页面将回到初始状态。");
+    setTimeout(() => location.reload(), 700);
+    } catch (e) { status("❌ 无法清除浏览器存储，请通过浏览器的本站数据设置处理", S_WARN); }
+  };
+}
+
+function readSetup() {
+  const g = (id) => (document.getElementById(id) ? document.getElementById(id).value.trim() : "");
+  return validateHubCfg({ worker: HUB_MANAGED_ORIGIN || g("s-worker"), canvasUrl: g("s-canvas"), token: g("s-token"),
+    expires: g("s-exp"), sendkey: "", secret: hubCfg().secret });
+}
+
+async function saveSetup(inputCfg) {
+  const c = validateHubCfg(inputCfg || readSetup());
+  const binding = await refreshBinding(c);
+  const values = configValues(c);
+  if (await refreshBinding(hubCfg()) !== binding)
+    values.hubRefreshState = JSON.stringify({ version: 1, binding, successAt: null });
+  storeTogether(values);
+  updateRefreshReminder();
+  $("s-worker").value = c.worker;
+  $("s-canvas").value = c.canvasUrl;
+  return c;
+}
+
+function configValues(c) {
+  return { hubWorker: c.worker, hubCanvasUrl: c.canvasUrl, hubToken: c.token,
+    hubExpires: c.expires || "", hubSendKey: c.sendkey || "", hubSecret: c.secret || "" };
+}
+
+function validateBackup(value) {
+  const data = value && value.format === "canvas-weekly-hub-backup" && value.version === 1 && value.data;
+  if (!data || !Array.isArray(data.weeks) || !data.weeks.length || data.weeks.length > 52)
+    throw new Error("请选择本项目导出的看板备份文件（最多 52 份历史记录）");
+  normalizeOrigin(data.canvas_url, "备份学校地址");
+  for (const week of data.weeks) {
+    if (!week || !/^\d{4}-\d{2}-\d{2}$/.test(week.date) || !Array.isArray(week.courses))
+      throw new Error("备份周报格式不正确");
+    for (const course of week.courses) {
+      if (!course || ["new_assignments", "upcoming", "new_files", "announcements", "changes"]
+        .some((key) => !Array.isArray(course[key]) || course[key].some((item) => !item || typeof item !== "object")))
+        throw new Error("备份课程格式不正确");
+    }
+    if (week.warnings && (!Array.isArray(week.warnings) || week.warnings.some((item) => typeof item !== "string")))
+      throw new Error("备份警告格式不正确");
+  }
+  const state = value.state || { assignments: {} };
+  if (!state.assignments || typeof state.assignments !== "object" || Array.isArray(state.assignments))
+    throw new Error("备份快照格式不正确");
+  for (const course of Object.values(state.assignments)) {
+    if (!course || typeof course !== "object" || Array.isArray(course) ||
+        Object.values(course).some((item) => !item || typeof item !== "object" || Array.isArray(item)))
+      throw new Error("备份快照格式不正确");
+  }
+  // 仅导入明确的数据字段，忽略备份中额外的配置 / 凭证字段。
+  return { data: { site_title: data.site_title, canvas_url: data.canvas_url, username: data.username,
+    tz_label: data.tz_label, updated_at: data.updated_at, weeks: data.weeks }, state: { assignments: state.assignments } };
+}
+
+function buildBackup() {
+  let data, state;
+  try {
+    data = JSON.parse(HUB_STORE.get("hubData") || "null");
+    state = JSON.parse(HUB_STORE.get("hubLastState") || "null");
+  } catch (e) { throw new Error("本机数据损坏，请先重新抓取课程"); }
+  const clean = validateBackup({ format: "canvas-weekly-hub-backup", version: 1, data, state });
+  return { format: "canvas-weekly-hub-backup", version: 1, data: clean.data, state: clean.state };
+}
+
+function downloadBackup() {
+  triggerDownload(new Blob([JSON.stringify(buildBackup(), null, 2)], { type: "application/json;charset=utf-8" }),
+    fmtDate(new Date()) + "_Canvas看板备份_v1.json");
+}
+
+/* ---------------- 新手引导条 & 更新按钮 ---------------- */
+function showFirstTip() {
+  if (document.getElementById("first-tip")) return;
+  if (HUB_STORE.get("hubTipDone")) return;
+  const main = document.querySelector("main");
+  if (!main) return;
+  const tip = document.createElement("div");
+  tip.id = "first-tip";
+  tip.innerHTML = `<span>🎉 <b>看板已就绪！</b>常用三件事：
+    ① 点击顶部 <b>刷新课程</b> 查询最新数据，到期提醒可在设置中调整；
+    ② 顶部 <b>📅 截止日历</b> 可导入手机，到点自动提醒；
+    ③ <b>⚙️ 设置</b> 里可下载离线版「我的学习网站.html」。</span>
+    <button title="知道了" style="margin-left:auto;flex:none">✕</button>`;
+  tip.querySelector("button").onclick = () => {
+    HUB_STORE.set("hubTipDone", "1");
+    tip.remove();
+  };
+  main.insertBefore(tip, main.firstChild);
+}
+
+const refreshBtn = document.createElement("button");
+refreshBtn.id = "refresh-btn";
+refreshBtn.className = "icon-btn";
+refreshBtn.className = "icon-btn refresh-action";
+refreshBtn.title = "按已保存的配置查询最新课程，不提交设置中的草稿";
+refreshBtn.textContent = "刷新课程";
+document.getElementById("settings-btn").parentElement.insertBefore(
+  refreshBtn, document.getElementById("settings-btn"));
+refreshBtn.onclick = async () => {
+  const c = hubCfg();
+  if (!c.worker || !c.token) { showSetup(); return; }
+  if (hubBusy) return;
+  refreshBtn.textContent = "刷新中…";
+  refreshNotice("正在查询 Canvas，请稍候…");
+  try {
+    await withCanvasTask(async () => {
+      const data = await fetchAll();
+      boot(data);
+      showFirstTip();
+      const warnings = data.weeks[0].warnings;
+      refreshNotice(warnings.length ? "看板已更新，部分内容未能读取：" + warnings.join("；") : "课程已更新并保存在本浏览器。");
+    });
+  } catch (e) {
+    refreshNotice("本次未更新：" + e.message + "。旧看板保留；可在设置中检查配置。");
+  } finally {
+    refreshBtn.textContent = "刷新课程";
+  }
+};
+const reminderRefresh = document.getElementById("reminder-refresh");
+if (reminderRefresh) reminderRefresh.onclick = () => refreshBtn.onclick();
+
+if (document.addEventListener) document.addEventListener("visibilitychange", updateRefreshReminder);
+if (window.addEventListener) {
+  window.addEventListener("focus", updateRefreshReminder);
+  window.addEventListener("pageshow", updateRefreshReminder);
+  window.addEventListener("storage", (e) => {
+    if (e.key === null || ["hubRefreshState", "hubData", "hubUpdateReminder", "hubToken", "hubCanvasUrl", "hubWorker"].includes(e.key)) {
+      // storage 事件不传递正文给其他服务，仅在同源浏览器内重新读取已保存的看板。
+      try {
+        const data = JSON.parse(HUB_STORE.get("hubData") || "null");
+        if (data && Array.isArray(data.weeks) && data.weeks.length) boot(data);
+      } catch (error) { refreshNotice("本地看板数据无法读取，请在设置中检查或恢复备份。"); }
+      updateRefreshReminder();
+    }
+  });
+}
+
+const _bootRaw = window.__HUB_BOOT__;
+window.__HUB_BOOT__ = function () {
+  _bootRaw();
+  // 数据就绪后补上新手引导条（仅网页版）
+  const has = (() => { try {
+    const d = JSON.parse(HUB_STORE.get("hubData") || "null");
+    return !!(d && d.weeks && d.weeks.length);
+  } catch (e) { return false; } })();
+  if (has) showFirstTip();
+  updateRefreshReminder();
+};
+
+/* ---------------- 入口接线 ---------------- */
+
+$("settings-btn").addEventListener("click", () => showSetup());
+$("ics-link").addEventListener("click", (e) => {
+  // 网页版：动态生成 ICS 下载（若已启用订阅，链接已在 setIcsLink 中指向订阅地址）
+  if (!/^data:/.test($("ics-link").href) && !/\/ics\?/.test($("ics-link").href)) {
+    e.preventDefault();
+    downloadIcs();
+  }
+});
+
+window.__HUB_BOOT__ && window.__HUB_BOOT__();
+
+/* ---------------- Star 数展示（缓存 1 小时，失败静默） ---------------- */
+(async () => {
+  try {
+    let n = null, t = 0;
+    try {
+      const j = JSON.parse(HUB_STORE.get("hubStars") || "null");
+      if (j) { n = j.n; t = j.t || 0; }
+    } catch (e) {}
+    if (!n || Date.now() - t > 3600000) {
+      const r = await fetch("https://api.github.com/repos/Famalhaut04/canvas-weekly-hub");
+      if (r.ok) {
+        n = (await r.json()).stargazers_count;
+        HUB_STORE.set("hubStars", JSON.stringify({ n, t: Date.now() }));
+      }
+    }
+    if (n !== null && n !== undefined) {
+      const el = document.getElementById("star-count");
+      if (el) el.textContent = " " + n;
+    }
+  } catch (e) { /* 离线或限流时静默 */ }
+})();
+
+</script>
+</body>
+</html>
